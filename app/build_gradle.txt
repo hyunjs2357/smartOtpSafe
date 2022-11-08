@@ -1,0 +1,6 @@
+1. firebase 쓸 때 추가 사항
+- 사이트 참고하면 됨
+
+2. Volley
+build.gradle(Module:app) 안에 dependencies에 쓰기
+implementation 'com.android.volley:volley:1.1.1' 

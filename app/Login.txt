@@ -1,0 +1,83 @@
+public class Login extends AppCompatActivity {
+
+    EditText etId, etPw;
+    Button btnLogin;
+
+    String id, pw, token;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_login);
+
+        btnLogin = (Button)findViewById(R.id.btnLogin);
+        btnLogin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                etId = (EditText)findViewById(R.id.etId);
+                etPw = (EditText)findViewById(R.id.etPw);
+                id = etId.getText().toString().trim();
+                pw = etPw.getText().toString().trim();
+
+                if ((id != null) && (!id.isEmpty()) && (pw != null) && (!pw.isEmpty())) {
+                    FirebaseInstanceId.getInstance().getInstanceId().addOnSuccessListener( Login.this,  new OnSuccessListener<InstanceIdResult>() {
+                        @Override
+                        public void onSuccess(InstanceIdResult instanceIdResult) {
+                            token = instanceIdResult.getToken();
+                            Log.e("newToken",token);
+                            LoginVolley(id, pw,token);
+                        }
+                    });
+
+                }
+            }
+        });
+    }
+
+    private void LoginVolley(final String userID, final String userPW, final String userToken) {
+        // 1. RequestQueue 생성 및 초기화
+        RequestQueue requestQueue = Volley.newRequestQueue(Login.this);
+
+        String url = "http://safeotp1123.dothome.co.kr/loginChk.php";
+
+        final AlertDialog.Builder builder = new AlertDialog.Builder(Login.this);
+
+        // 2. Request Obejct인 StringRequest 생성
+        StringRequest request = new StringRequest(Request.Method.POST, url,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(final String response) {
+                        Log.d("result", "[" + response + "]"); // 서버와의 통신 결과 확인 목적
+
+                        if(response.isEmpty() || response.equals("fail") || response == null){
+                            builder.setTitle("알림").setMessage("아이디/비밀번호가 다릅니다.").setPositiveButton("확인", null);
+                            AlertDialog dialog = builder.create();
+                            dialog.show();
+                        }else{
+//                            String blue = response.trim();
+                            Intent intent = new Intent(getApplicationContext(),OTPActivity.class);
+//                            intent.putExtra("bluetoothName",blue);
+                            startActivity(intent);
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        Log.d("error", "[" + error.getMessage() + "]");
+                    }
+                }) {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> params = new HashMap<>();
+                params.put("userid", userID);
+                params.put("userpw", userPW);
+                params.put("usertoken", userToken);
+                return params;
+            }
+        };
+
+        // 3) 생성한 StringRequest를 RequestQueue에 추가
+        requestQueue.add(request);
+    }
+}
